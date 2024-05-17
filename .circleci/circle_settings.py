@@ -43,7 +43,7 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-ROOT_URLCONF = 'enrollment.circle_urls'
+ROOT_URLCONF = 'django_site.urls'
 
 TEMPLATES = [
     {
