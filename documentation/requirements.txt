@@ -1,0 +1,4 @@
+-r quicksilver/requirements.txt
+-r simple_backup/requirements.txt
+-r simple_data_export/requirements.txt
+-r enrollment/requirements.txt

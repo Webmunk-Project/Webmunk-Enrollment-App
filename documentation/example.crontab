@@ -1,0 +1,13 @@
+MAILTO=me@example.com
+SHELL=/bin/bash
+
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue --task-queue data-export
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue --task-queue wishlist
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue --task-queue qualtrics-eligible
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue --task-queue sync-amazon-orders
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue --task-queue qualtrics-sync
+* * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py run_task_queue --task-queue data-point-sync
+0 0 * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py incremental_backup
+*/15 * * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py push_group_memberships
+0 7 * * *    source /var/www/myproject/venv/bin/activate && python /var/www/myproject/webmunk_enrollment/manage.py webmunk_create_nightly_export_job

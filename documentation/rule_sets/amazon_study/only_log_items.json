@@ -1,0 +1,259 @@
+{
+    "actions": {
+      "webmunk-button": {
+        "on-click": [
+          {
+            "name": "log-click",
+            "ancestors": [
+              ".a-button-stack",
+              ".a-carousel-row-inner"
+            ]
+          },
+          {
+            "name": "log-click",
+            "ancestors": [
+              ".a-modal-scroller"
+            ]
+          }
+        ]
+      },
+      "webmunk-add-to-wishlist-button": {
+        "on-click": [
+          {
+            "name": "log-click"
+          }
+        ]
+      },
+      "webmunk-checkout-element": {
+        "on-click": [
+          "log-click"
+        ],
+        "on-hide": [
+          "log-hidden"
+        ],
+        "on-show": [
+          "log-visible"
+        ]
+      },
+      "webmunk-hide-block": {
+        "on-click": [
+          "log-click"
+        ],
+        "on-hide": [
+          "log-hidden"
+        ],
+        "on-show": [
+          "log-visible"
+        ]
+      },
+      "webmunk-highlight-block": {
+        "on-click": [
+          "log-click"
+        ],
+        "on-hide": [
+          "log-hidden"
+        ],
+        "on-show": [
+          "log-visible"
+        ]
+      },
+      "webmunk-asin-item": {
+        "on-click": [
+          "log-click"
+        ],
+        "on-hide": [
+          "log-hidden"
+        ],
+        "on-show": [
+          "log-visible"
+        ]
+      },
+      "__webmunk-scroll-bar": {
+        "on-scroll": [
+          "log-scroll"
+        ]
+      }
+    },
+    "additional-css": [
+          ".webmunk-hide-block { display: none !important; }"
+    ],
+    "description": [
+      "Thank you for participating in this Study.",
+      "If you have questions about the study or need technical support, please contact the study team using the email address provided in the survey."
+    ],
+    "pending-tasks-label": "Please complete these tasks.",
+    "filters": [
+      {
+        "excludePaths": [
+          "^/gp/buy/",
+          "^/gp/video/"
+        ],
+        "hostEquals": "amazon.com"
+      },
+      {
+        "excludePaths": [
+          "^/gp/buy/",
+          "^/gp/video/"
+        ],
+        "hostSuffix": ".amazon.com"
+      },
+      {
+        "excludeHostSuffix": "aws.amazon.com"
+      }
+    ],
+    "key": "CHANGEME",
+    "rules": [
+      {
+        "add-class": "webmunk-asin-item",
+        "match": "[data-asin!=''][data-asin]"
+      },
+      {
+        "add-class": "webmunk-asin-item",
+        "match": ":isAmazonProductItem('')"
+      },
+      {
+        "add-class": "webmunk-wishlist-item",
+        "match": "#wl-item-view [data-itemid!=''][data-itemid]"
+      },
+      {
+        "remove-class": "webmunk-asin-item",
+        "match": ".webmunk-wishlist-item .webmunk-asin-item"
+      },
+      {
+        "add-class": "webmunk-wishlist-list",
+        "match": "[data-action='atwl-dd']"
+      },
+      {
+        "add-class": "webmunk-wishlist-list",
+        "match": "#nav-al-wishlist a.nav-link"
+      },
+      {
+        "add-class": "webmunk-add-to-wishlist-button",
+        "match": "#nav-al-wishlist a.nav-link"
+      },
+      {
+        "add-class": "webmunk-add-to-wishlist-button",
+        "match": "#atwl-dd-create-list"
+      },
+      {
+        "add-class": "webmunk-button",
+        "match": ".a-button"
+      },
+      {
+        "add-class": "webmunk-button",
+        "match": "input[type='submit']"
+      },
+      {
+        "add-class": "webmunk-button",
+        "match": "input[type='button']"
+      },
+      {
+        "add-class": "webmunk-button",
+        "match": "button"
+      }
+    ],
+    "log-elements": [
+      {
+        "filters": {
+          "hostEquals": "amazon.com",
+          "hostSuffix": ".amazon.com",
+          "excludeHostSuffix": "aws.amazon.com"
+        },
+        "load": [
+          "div#ppd",
+          "[data-asin!=''][data-asin]",
+          "#spc-order-summary",
+          "#spc-orders",
+          "[cel_widget_id^='typ-shipmentSummary-']"
+        ],
+        "leave": [
+          "div#ppd",
+          "[data-asin!=''][data-asin]",
+          "#spc-order-summary",
+          "#spc-orders",
+          "[cel_widget_id^='typ-shipmentSummary-']"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/.*/dp/.*"
+        },
+        "load": [
+          "body"
+        ],
+        "leave": [
+          "body"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/dp/.*"
+        },
+        "load": [
+          "body"
+        ],
+        "leave": [
+          "body"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/gp/product/.*"
+        },
+        "load": [
+          "body"
+        ],
+        "leave": [
+          "body"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/.*/wishlist/.*"
+        },
+        "load": [
+          "body"
+        ],
+        "leave": [
+          "body"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/\\?.*"
+        },
+        "load": [
+          "#pageContent"
+        ],
+        "leave": [
+          "#pageContent"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/ref=nav_logo"
+        },
+        "load": [
+          "#pageContent"
+        ],
+        "leave": [
+          "#pageContent"
+        ]
+      },
+      {
+        "filters": {
+          "urlMatches": "amazon.com/$"
+        },
+        "load": [
+          "#pageContent"
+        ],
+        "leave": [
+          "#pageContent"
+        ]
+      }
+    ],
+    "upload-url": "https://server-1.example.com/data/add-bundle.json",
+    "enroll-url": "https://enroll.example.com/enroll/enroll.json",
+    "uninstall-url": "https://enroll.example.com/enroll/uninstall?identifier=<IDENTIFIER>",
+    "tasks": []
+  }
