@@ -2,20 +2,12 @@
 
 from __future__ import print_function
 
-import datetime
-import json
-
-import arrow
-import requests
-
 from django.conf import settings
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
-from django.urls import reverse
-from django.utils import timezone
 
-from ...models import Enrollment
+from enrollment.models import Enrollment
 
 class Command(BaseCommand):
     help = 'Sends reminders to participants with outstanding tasks.'
@@ -24,11 +16,9 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options): # pylint: disable=too-many-locals
-        from enrollment.models import Enrollment
+        # test_ids = ['98650795']
 
-        test_ids = ['98650795']
-
-        ids = [
+        study_ids = [
             '31691939',
             '34556133',
             '34388957',
@@ -648,8 +638,8 @@ class Command(BaseCommand):
             '89788667',
         ]
 
-        for id in ids:
-            enrollment = Enrollment.objects.filter(assigned_identifier=id).first()
+        for study_id in study_ids:
+            enrollment = Enrollment.objects.filter(assigned_identifier=study_id).first()
 
             if enrollment is not None:
                 context = {}

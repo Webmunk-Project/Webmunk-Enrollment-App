@@ -59,7 +59,7 @@ def enroll(request): # pylint: disable=too-many-branches
                 ],
                 'pending-tasks-label': 'Please complete these tasks.',
                 'filters': [],
-                'key': 'Qhvrmhxp9spERvawGPLozqnPhYgKoYjfTJv2CPQVqyk=',
+                'key': settings.PDK_DATA_KEY,
                 'rules': [],
                 'log-elements': [],
                 'upload-url': 'https://server-q.webmunk.org/data/add-bundle.json',
@@ -76,9 +76,8 @@ def enroll(request): # pylint: disable=too-many-branches
 
             return HttpResponse(json.dumps(payload, indent=2), content_type='application/json', status=200)
 
-        else:
-            found_enrollment.last_fetched = now
-            found_enrollment.save()
+        found_enrollment.last_fetched = now
+        found_enrollment.save()
 
         payload['identifier'] = found_enrollment.assigned_identifier
 
@@ -153,8 +152,6 @@ def uninstall(request): # pylint: disable=too-many-branches
 @csrf_exempt
 def amazon_fetched(request): # pylint: disable=too-many-branches
     raw_identifier = request.POST.get('identifier', request.GET.get('identifier', None))
-
-    # TODO - Add additional metadata about how data looks from extension.
 
     payload = {
         'updated': 0
@@ -451,7 +448,7 @@ def create_asin_lookup(request):
         if request.POST.get('upload_to_bucket', '').lower() == 'on':
             requester = get_user_model().objects.filter(username='s3-asin-files').first()
 
-        report_job = ReportJob.objects.create(requester=requester, requested=timezone.now(), job_index=1, job_count=1, parameters=json.dumps(job_def, indent=2))
+        ReportJob.objects.create(requester=requester, requested=timezone.now(), job_index=1, job_count=1, parameters=json.dumps(job_def, indent=2))
 
         context['message'] = 'Request for %s ASIN lookups submitted successfully.' % len(asins)
 

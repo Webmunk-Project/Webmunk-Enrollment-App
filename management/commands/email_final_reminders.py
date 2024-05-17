@@ -2,18 +2,11 @@
 
 from __future__ import print_function
 
-import datetime
-import json
-
-import arrow
-import requests
-
 from django.conf import settings
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils import timezone
 
 from ...models import Enrollment
 
@@ -24,10 +17,7 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options): # pylint: disable=too-many-locals
-        from enrollment.models import Enrollment
-
-
-        ids = [
+        study_ids = [
             '77480295',
             '88369711',
             '49127118',
@@ -109,8 +99,8 @@ class Command(BaseCommand):
             '66879850',
         ]
 
-        for id in ids:
-            enrollment = Enrollment.objects.get(assigned_identifier=id)
+        for study_id in study_ids:
+            enrollment = Enrollment.objects.get(assigned_identifier=study_id)
 
             has_final_amazon = False
             has_final_survey = False

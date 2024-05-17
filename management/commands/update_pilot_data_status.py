@@ -45,5 +45,5 @@ class Command(BaseCommand):
 
                         enrollment.metadata = json.dumps(metadata, indent=2)
                         enrollment.save()
-            except:
+            except: # pylint: disable=bare-except
                 traceback.print_exc()

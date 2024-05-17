@@ -43,7 +43,7 @@ def export_data_types():
         ('enrollment.distributed_asin_information', 'Distributed ASIN Information',),
     ]
 
-def compile_data_export(data_type, data_sources, start_time=None, end_time=None, custom_parameters=None): # pylint: disable=too-many-locals, unused-argument, too-many-branches, too-many-statements
+def compile_data_export(data_type, data_sources, start_time=None, end_time=None, custom_parameters=None): # pylint: disable=too-many-locals, unused-argument, too-many-branches, too-many-statements, too-many-return-statements
     if data_type == 'enrollment.qualtrics_responses':
         now = arrow.get()
 
@@ -382,7 +382,7 @@ def compile_data_export(data_type, data_sources, start_time=None, end_time=None,
 
                     print('FETCHING %s -- %s' % (url, timezone.now().isoformat()))
 
-                    response = requests.get(url)
+                    response = requests.get(url, timeout=300)
 
                     items = response.json()
 
@@ -449,7 +449,7 @@ def compile_data_export(data_type, data_sources, start_time=None, end_time=None,
                 asin_index = 0
 
                 for asin_item_pk in asin_item_pks:
-                    if True or (asin_index % 500) == 0:
+                    if (asin_index % 500) == 0:
                         print('%s / %s' % (asin_index, len(asin_item_pks)))
 
                     asin_index += 1
@@ -537,7 +537,7 @@ def compile_data_export(data_type, data_sources, start_time=None, end_time=None,
                             writer.writerow(product_values)
 
                              # export_file.writestr(('asins/%s.json' % asin.lower()), asin_item.keepa_response)
-                        except:
+                        except: # pylint: disable=bare-except
                             traceback.print_exc()
 
             export_file.write(csv_filename, 'asins.txt')

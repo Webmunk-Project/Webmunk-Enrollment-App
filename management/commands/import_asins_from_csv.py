@@ -5,8 +5,6 @@ from django.core.management.base import BaseCommand
 
 from quicksilver.decorators import handle_lock, handle_schedule, add_qs_arguments
 
-from ...models import ScheduledTask
-
 class Command(BaseCommand):
     help = 'Checks outstanding tasks for completion'
 
@@ -17,8 +15,8 @@ class Command(BaseCommand):
     @handle_lock
     @handle_schedule
     def handle(self, *args, **options):
-        with open(options.get('file', None), mode='r', encoding='utf-8') as input:
-            for line in input:
+        with open(options.get('file', None), mode='r', encoding='utf-8') as input_file:
+            for line in input_file:
                 if line.startswith('ASIN') is False:
                     tokens = line.split('\t')
 

@@ -1,4 +1,4 @@
-# pylint: disable=line-too-long, no-member, too-few-public-methods
+# pylint: disable=line-too-long, no-member, too-few-public-methods, attribute-defined-outside-init
 
 import base64
 import datetime
@@ -408,16 +408,16 @@ class AmazonASINItem(models.Model):
 
     def fetch_root_category(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            return keepa.get('rootCategory', None)
+            return keepa_data.get('rootCategory', None)
 
         return None
 
@@ -425,17 +425,17 @@ class AmazonASINItem(models.Model):
         category = ''
 
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            if keepa.get('categoryTree', None) is not None:
-                for category_item in keepa.get('categoryTree', []):
+            if keepa_data.get('categoryTree', None) is not None:
+                for category_item in keepa_data.get('categoryTree', []):
                     if category != '':
                         category = category + ' > '
 
@@ -447,17 +447,17 @@ class AmazonASINItem(models.Model):
         category = ''
 
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            if keepa.get('categoryTree', None) is not None:
-                for category_item in keepa.get('categoryTree', []):
+            if keepa_data.get('categoryTree', None) is not None:
+                for category_item in keepa_data.get('categoryTree', []):
                     if category != '':
                         category = category + ' > '
 
@@ -468,16 +468,16 @@ class AmazonASINItem(models.Model):
 
     def fetch_brand(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            brand = keepa.get('brand', None)
+            brand = keepa_data.get('brand', None)
 
             return brand
 
@@ -485,14 +485,14 @@ class AmazonASINItem(models.Model):
 
     def fetch_item_type(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
             brand = keepa.get('type', None)
 
@@ -502,16 +502,16 @@ class AmazonASINItem(models.Model):
 
     def fetch_manufacturer(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            brand = keepa.get('manufacturer', None)
+            brand = keepa_data.get('manufacturer', None)
 
             return brand
 
@@ -519,66 +519,66 @@ class AmazonASINItem(models.Model):
 
     def fetch_seller(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            sellerId = keepa.get('sellerIds', None)
+            seller_id = keepa_data.get('sellerIds', None)
 
-            if sellerId is None:
-                sellerId = keepa.get('buyBoxSellerId', None)
+            if seller_id is None:
+                seller_id = keepa_data.get('buyBoxSellerId', None)
 
-            return sellerId
+            return seller_id
 
         return None
 
     def fetch_size(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            return keepa.get('size', None)
+            return keepa_data.get('size', None)
 
         return None
 
     def fetch_title(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            return keepa.get('title', None)
+            return keepa_data.get('title', None)
 
         return None
 
     def fetch_is_on_keepa(self):
         if self.keepa_response is not None:
-            keepa = {}
+            keepa_data = {}
 
             try:
-                keepa = self.cached_keepa
-            except:
-                keepa = json.loads(self.keepa_response)
+                keepa_data = self.cached_keepa
+            except: # pylint: disable=bare-except
+                keepa_data = json.loads(self.keepa_response)
 
-                self.cached_keepa = keepa
+                self.cached_keepa = keepa_data
 
-            if keepa.get('error', None) is None:
+            if keepa_data.get('error', None) is None:
                 return True
 
             return False
@@ -592,7 +592,7 @@ class AmazonASINItem(models.Model):
 
             try:
                 keepa_response = self.cached_keepa
-            except:
+            except: # pylint: disable=bare-except
                 keepa_response = json.loads(self.keepa_response)
 
                 self.cached_keepa = keepa_response
@@ -658,7 +658,7 @@ class AmazonASINItem(models.Model):
                     pass # Pandas issue
             else:
                 raise ValueError('Unable to save Keepa response')
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-exception-caught
             payload = {
                 'error': 'Unable to retrieve product - exception encountered.'
             }

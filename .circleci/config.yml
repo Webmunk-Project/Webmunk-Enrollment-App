@@ -12,7 +12,7 @@ jobs:
   build:
     docker:
       - image: cimg/python:3.8
-      - image: cimg/postgres:9.6-postgis
+      - image: cimg/postgres:postgres:12.18-postgis
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
@@ -23,7 +23,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: venv-{{ .Branch }}-{{ checksum "requirements.txt" }}-v1
+          key: venv-{{ .Branch }}-{{ checksum "requirements.txt" }}
       - run:
           name: Build and validate
           command: |
@@ -42,8 +42,8 @@ jobs:
             django-admin.py startproject django_site
             mv ../enrollment django_site
             cd django_site
-            cp enrollment/circle_settings.py django_site/settings.py
-            cp enrollment/circle_urls.py django_site/urls.py
+            cp enrollment/.circleci/circle_settings.py django_site/settings.py
+            cp enrollment/.circleci/circle_urls.py django_site/urls.py
             git clone https://github.com/audacious-software/Quicksilver-Django.git quicksilver
             git clone https://github.com/audacious-software/Simple-Backup-Django.git simple_backup
             git clone https://github.com/audacious-software/Simple-Data-Export-Django.git simple_data_export

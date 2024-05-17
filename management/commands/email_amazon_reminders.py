@@ -3,13 +3,11 @@
 from __future__ import print_function
 
 import datetime
-import json
 
 import arrow
-import requests
 
 from django.conf import settings
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -45,8 +43,6 @@ class Command(BaseCommand):
 
             if payment_eligible and '@' in raw_identifier and delta_days < 7:
                 active_tasks = enrollment.tasks.filter(completed=None, active__lte=now).order_by('active', 'task')
-
-                uninstall_task = active_tasks.filter(slug='uninstall-extension').first()
 
                 final_upload = active_tasks.filter(slug='amazon-fetch-final').first()
                 final_survey = active_tasks.filter(slug='main-survey-final').first()
