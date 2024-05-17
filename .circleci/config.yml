@@ -51,6 +51,7 @@ jobs:
             pip install -r simple_backup/requirements.txt --progress-bar off
             pip install -r simple_data_export/requirements.txt --progress-bar off
             python manage.py migrate
+            python manage.py install_quicksilver_tasks
             python manage.py test
             cp enrollment/.pylintrc .
             pylint enrollment
