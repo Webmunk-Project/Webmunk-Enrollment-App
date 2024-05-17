@@ -2,6 +2,7 @@
 # pylint: disable=no-member,line-too-long
 
 import json
+import traceback
 
 import arrow
 
@@ -26,20 +27,23 @@ class Command(BaseCommand):
         client = PDKClient(site_url=settings.PDK_API_URL, token=settings.PDK_API_TOKEN)
 
         for enrollment in Enrollment.objects.all().order_by('assigned_identifier'):
-            query = client.query_data_points(page_size=1).filter(generator_identifier='pdk-system-status', source=enrollment.assigned_identifier).order_by('-created')
+            try:
+                query = client.query_data_points(page_size=1).filter(generator_identifier='pdk-system-status', source=enrollment.assigned_identifier).order_by('-created')
 
-            if query.count() > 0:
-                latest = query[0]
+                if query.count() > 0:
+                    latest = query[0]
 
-                when = arrow.get(latest.get('passive-data-metadata', {}).get('pdk_server_created', 0))
+                    when = arrow.get(latest.get('passive-data-metadata', {}).get('pdk_server_created', 0))
 
-                point_count = latest.get('pending_points', -1)
+                    point_count = latest.get('pending_points', -1)
 
-                if point_count != -1:
-                    metadata = json.loads(enrollment.metadata)
+                    if point_count != -1:
+                        metadata = json.loads(enrollment.metadata)
 
-                    metadata['latest_pending_points_count'] = point_count
-                    metadata['latest_pending_points_updated'] = when.datetime.isoformat()
+                        metadata['latest_pending_points_count'] = point_count
+                        metadata['latest_pending_points_updated'] = when.datetime.isoformat()
 
-                    enrollment.metadata = json.dumps(metadata, indent=2)
-                    enrollment.save()
+                        enrollment.metadata = json.dumps(metadata, indent=2)
+                        enrollment.save()
+            except:
+                traceback.print_exc()

@@ -1,0 +1,14 @@
+Dear Webmunk Study Participant,
+
+This email contains the next steps to receive full compensation for your participation in the research study. You have outstanding tasks to complete. 
+
+Please open your Webmunk extension from the browser and click the links to complete the pending tasks. Once you have completed all of the required tasks, we will email you your gift card from GiftBit (gifts@giftbit.com).
+
+If you have questions about the study or need technical support, please contact the Webmunk team at webmunk_study@hbs.edu.
+
+Thank you!
+
+The Webmunk Team
+
+
+P.S. To unsubscribe from future reminders, visit {{ unsubscribe }}

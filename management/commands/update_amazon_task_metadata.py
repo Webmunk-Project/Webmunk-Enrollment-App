@@ -11,7 +11,7 @@ from django.utils import timezone
 from quicksilver.decorators import handle_lock, handle_schedule, add_qs_arguments
 
 from ...models import ScheduledTask
-from ...vendor.pdk_client import PDKClient, PDKClientTimeout
+from ...vendor.pdk_client import PDKClient, PDKClientTimeout, PDKClientServerError
 
 class Command(BaseCommand):
     help = 'Adds relevent metadata for Amazon tasks.'
@@ -23,27 +23,33 @@ class Command(BaseCommand):
     @handle_lock
     @handle_schedule
     def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches
-        amazon_tasks = ScheduledTask.objects.filter(slug__icontains='amazon', active__lte=timezone.now()).order_by('enrollment__assigned_identifier', 'slug')
+        amazon_tasks = ScheduledTask.objects.filter(slug__icontains='amazon-fetch', active__lte=timezone.now()).order_by('-enrollment__assigned_identifier', 'slug')
 
         for task in amazon_tasks: # pylint: disable=too-many-nested-blocks
+            logging.info('%s', task)
+
             try:
                 metadata = json.loads(task.enrollment.metadata)
 
                 data_url = metadata.get('data_point_server', None)
 
                 if data_url is not None:
+                    logging.info('%s[%s]: Fetching...', task.enrollment.assigned_identifier, data_url)
+
                     client = PDKClient(site_url=data_url, token=settings.PDK_API_TOKEN)
 
                     metadata = json.loads(task.metadata)
 
                     order_count = '%s_order_count' % task.slug
 
-                    if options.get('force', False) or (order_count in metadata) is False:
+                    completed_slug = '%s_completed' % task.slug
+
+                    if options.get('force', False) or (order_count in metadata) is False or metadata.get(completed_slug, False) is False:
                         query = client.query_data_points(page_size=32)
 
                         amazon_orders = []
 
-                        if task.slug == 'upload-amazon-start':
+                        if task.slug == 'amazon-fetch-initial':
                             amazon_orders = query.filter(generator_identifier='webmunk-amazon-order', source=task.enrollment.assigned_identifier, created__lte=task.enrollment.enrolled)
                         else:
                             amazon_orders = query.filter(generator_identifier='webmunk-amazon-order', source=task.enrollment.assigned_identifier, created__gte=task.enrollment.enrolled).order_by('-recorded')
@@ -92,6 +98,9 @@ class Command(BaseCommand):
                     task.enrollment.save()
             except PDKClientTimeout:
                 logging.info('Timeout. Skipping %s', task.enrollment.assigned_identifier)
+
+            except PDKClientServerError:
+                logging.info('Server error. Skipping %s', task.enrollment.assigned_identifier)
 
 
 #                   if item_count > 0:

@@ -7,7 +7,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="description" content="">
-		<title>Enrollments | Webmunk</title>
+		<title>ASIN Lookup | Webmunk</title>
 		<!-- Bootstrap core CSS -->
 		<link href="{% static 'enrollment/vendor/css/bootstrap.css' %}" rel="stylesheet">
 		<link href="{% static 'enrollment/vendor/css/bootstrap-table.css' %}" rel="stylesheet">
@@ -46,8 +46,8 @@
 	</head>
 	<body>
 		<nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
-			<div class="container-fluid">
-				<a class="navbar-brand" href="#">Enrollments</a>
+			<div class="container">
+    			<a class="navbar-brand" href="#">ASIN Lookup</a>
 				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
 				</button>
@@ -65,63 +65,38 @@
 		</nav>
 
 		<main class="container">
-			<table id="enrollment_table" class="table small" data-toggle="table" data-pagination="true" data-search="true" data-unique-id="identifier" data-page-size="100" data-page-list="[25, 50, 100, 500, 1000]">
-				<thead>
-					<tr>
-						<th scope="col" data-sortable="true" data-field="identifier">ID</th>
-						<th scope="col" data-sortable="true" data-field="group" data-formatter="selectFormatter" data-search-formatter="false">Group</th>
-						<th scope="col" data-sortable="true">Original ID</th>
-						<th scope="col" data-sortable="true">Rule Set</th>
-						<th scope="col" data-sortable="true">Enrolled</th>
-						<th scope="col" data-sortable="true">History Since</th>
-						<th scope="col" data-sortable="true">Last Updated</th>
-						<th scope="col" data-sortable="true">Latest Data Point</th>
-						<th scope="col" data-sortable="true">Uninstalled</th>
-						<th scope="col" data-sortable="true">Intake Survey</th>
-						<th scope="col" data-sortable="true">Initial Upload</th>
-						<th scope="col" data-sortable="true">Final Upload</th>
-						<th scope="col" data-sortable="true">2022 Order Count</th>
-						<th scope="col" data-sortable="true">2023 Order Count</th>
-						<th scope="col" data-sortable="true">Final Survey</th>
-						<th scope="col" data-sortable="true">Wishlist Install</th>
-						<th scope="col" data-sortable="true">Wishlist Instructions</th>
-						<th scope="col" data-sortable="true">Wishlist Uninstall</th>
-					</tr>
-				</thead>
-				<tbody>
-					{% for enrollment in enrollments %}
-						<tr>
-							<th scope="row">{{ enrollment.assigned_identifier }}</th>
-							<td>{{ enrollment.group }}</td>
-							<td>{{ enrollment.current_raw_identifier }}</td>
-							<td style="white-space: nowrap;">{{ enrollment.rule_set }}</td>
-							<td style="white-space: nowrap;">{{ enrollment.enrolled|localtime|date:'Y-m-d H:i' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_metadata:'amazon_start' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment.last_fetched|localtime|date:'Y-m-d H:i' }}</td>
-							{% if enrollment.latest_data_point %}
-								<td style="white-space: nowrap;">
-									{{ enrollment.latest_data_point|localtime|date:'Y-m-d H:i' }}
-									{% if enrollment.latest_data_point %}
-										<br />({{ enrollment.latest_server }})
-									{% endif %}
-								</td>
-							{% else %}
-								<td></td>
-							{% endif %}
-							<td style="white-space: nowrap;">{{ enrollment.last_uninstalled|localtime|date:'Y-m-d H:i' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'qualtrics-initial' }}{{ enrollment|fetch_completed_task:'main-survey-initial' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'upload-amazon-start' }}{{ enrollment|fetch_completed_task:'amazon-fetch-initial' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'upload-amazon-final' }}{{ enrollment|fetch_completed_task:'amazon-fetch-final' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_metadata:'year-2022_order_count' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_metadata:'year-2023_order_count' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'qualtrics-final' }}{{ enrollment|fetch_completed_task:'main-survey-final' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'wishlist-initial' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'wishlist-task' }}</td>
-							<td style="white-space: nowrap;">{{ enrollment|fetch_completed_task:'wishlist-final' }}</td>
-						</tr>
-					{% endfor %}
-				</tbody>
-			</table>
+		  <div class="row">
+			<div class="col-sm-3"></div>
+			<div class="col-sm-6">
+				{% if message %}
+					<div class="alert alert-primary" role="alert">{{ message }}</div>
+				{% endif %}
+			
+				<form action="{% url 'create_asin_lookup' %}" method="POST">
+					{% csrf_token %}
+
+					<div class="form-group mb-3">
+						<label for="asin_field">Please enter one ASIN per line:</label>
+						<textarea class="form-control mt-2" id="asin_field" name="asins" rows="12"></textarea>
+					</div>
+
+					<div class="form-group mb-3">
+						<div class="form-check">
+						  <input class="form-check-input" type="checkbox" value="on" name="upload_to_bucket" id="upload_to_bucket" checked>
+						  <label class="form-check-label" for="flexCheckChecked">
+							Upload to Amazon S3 bucket
+						  </label>
+						</div>
+					</div>
+				
+					<div class="form-row">
+						<button type="submit" class="btn btn-primary mb-2">Request Lookup</button>
+					</div>
+				</form>
+			</div>
+			<div class="col-sm-3"></div>
+		  </div>
+				
 
 			<form action="{% url 'enrollment_upload_rewards' %}" id="upload_purchases" method="POST" enctype="multipart/form-data">
 				{% csrf_token %}
@@ -189,22 +164,6 @@
 			
 			$(document).ready(function() {
 				window.setTimeout(attachListeners, 500)
-				
-				$('#enrollment_table').on('load-success.bs.table', function (e, data, status, jqXHR) {
-					window.setTimeout(attachListeners, 500)
-				})
-
-				$('#enrollment_table').on('page-change.bs.table', function (e, number, size) {
-					window.setTimeout(attachListeners, 500)
-				})
-
-				$('#enrollment_table').on('sort.bs.table', function (e, number, size) {
-					window.setTimeout(attachListeners, 500)
-				})
-
-				$('#enrollment_table').on('search.bs.table', function (e, number, size) {
-					window.setTimeout(attachListeners, 500)
-				})
 				
 				$('#action_upload_purchases').click(function(eventObj) {
 					eventObj.preventDefault()

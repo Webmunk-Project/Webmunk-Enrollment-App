@@ -12,10 +12,13 @@ import chardet
 
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import get_user_model
 from django.http import HttpResponse, Http404
 from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+
+from simple_data_export.models import ReportJob
 
 from .models import Enrollment, EnrollmentGroup, ExtensionRuleSet, ScheduledTask, AmazonReward
 from .simple_data_export_api import compile_data_export
@@ -40,10 +43,39 @@ def enroll(request): # pylint: disable=too-many-branches
                 break
 
         if found_enrollment is None:
-            found_enrollment = Enrollment(enrolled=now, last_fetched=now)
+            # found_enrollment = Enrollment(enrolled=now, last_fetched=now)
 
-            found_enrollment.assign_random_identifier(raw_identifier)
-            found_enrollment.save()
+            # found_enrollment.assign_random_identifier(raw_identifier)
+            # found_enrollment.save()
+
+            payload = {
+              'identifier': '00000000',
+              'rules': {
+                'actions': {},
+                'additional-css': [],
+                'description': [
+                  'Enrollment in this study is now closed.',
+                  'Please uninstall the extension by clicking the link below.'
+                ],
+                'pending-tasks-label': 'Please complete these tasks.',
+                'filters': [],
+                'key': 'Qhvrmhxp9spERvawGPLozqnPhYgKoYjfTJv2CPQVqyk=',
+                'rules': [],
+                'log-elements': [],
+                'upload-url': 'https://server-q.webmunk.org/data/add-bundle.json',
+                'enroll-url': 'https://enroll.webmunk.org/enroll/enroll.json',
+                'uninstall-url': 'https://enroll.webmunk.org/enroll/uninstall?identifier=<IDENTIFIER>',
+                'tasks': [
+                  {
+                    'message': 'Uninstall Study Browser Extension',
+                    'url': 'https://chrome.google.com/webstore/detail/study-browser-extension/koijebmgmlpeinmgdfogdoflpjfigcmi'
+                  }
+                ]
+              }
+            }
+
+            return HttpResponse(json.dumps(payload, indent=2), content_type='application/json', status=200)
+
         else:
             found_enrollment.last_fetched = now
             found_enrollment.save()
@@ -116,13 +148,13 @@ def uninstall(request): # pylint: disable=too-many-branches
             found_enrollment.last_uninstalled = now
             found_enrollment.save()
 
-            return render(request, 'webmunk_uninstall.html')
-
-    raise Http404
+    return render(request, 'webmunk_uninstall.html')
 
 @csrf_exempt
 def amazon_fetched(request): # pylint: disable=too-many-branches
     raw_identifier = request.POST.get('identifier', request.GET.get('identifier', None))
+
+    # TODO - Add additional metadata about how data looks from extension.
 
     payload = {
         'updated': 0
@@ -135,10 +167,10 @@ def amazon_fetched(request): # pylint: disable=too-many-branches
             if raw_identifier in (enrollment.current_raw_identifier(), enrollment.assigned_identifier,):
                 payload['updated'] += enrollment.tasks.filter(slug__icontains='amazon-fetch', completed=None, active__lte=now).update(completed=now)
 
-                if enrollment.tasks.filter(slug__icontains='amazon-fetch').exclude(completed=None).count() > 1 and enrollment.tasks.filter(slug='main-survey-final').count() == 0:
-                    survey_url = 'https://hbs.qualtrics.com/jfe/form/SV_37xQ9ZpbqC75UVg?webmunk_id=%s' % enrollment.assigned_identifier
+                # if enrollment.tasks.filter(slug__icontains='amazon-fetch').exclude(completed=None).count() > 1 and enrollment.tasks.filter(slug='main-survey-final').count() == 0:
+                #    survey_url = 'https://hbs.qualtrics.com/jfe/form/SV_37xQ9ZpbqC75UVg?webmunk_id=%s' % enrollment.assigned_identifier
 
-                    ScheduledTask.objects.create(enrollment=enrollment, active=now, task='Complete Final Survey', slug='main-survey-final', url=survey_url)
+                #    ScheduledTask.objects.create(enrollment=enrollment, active=(now + datetime.timedelta(days=3)), task='Complete Final Survey', slug='main-survey-final', url=survey_url)
 
     return HttpResponse(json.dumps(payload, indent=2), content_type='application/json', status=200)
 
@@ -280,6 +312,7 @@ def enrollment_upload_rewards(request): # pylint: disable=unused-argument, too-m
 
     return HttpResponse(json.dumps(payload, indent=2), content_type='application/json', status=200)
 
+@staff_member_required
 def enrollments_rewards_json(request): # pylint: disable=unused-argument, too-many-branches, too-many-statements
     payload = {}
 
@@ -300,6 +333,7 @@ def enrollments_rewards_json(request): # pylint: disable=unused-argument, too-ma
     return HttpResponse(json.dumps(payload, indent=2), content_type='application/json', status=200)
 
 
+@staff_member_required
 def enrollments_purchases_json(request): # pylint: disable=unused-argument, too-many-branches, too-many-statements
     payload = {}
 
@@ -390,3 +424,35 @@ def enrollments_purchases_json(request): # pylint: disable=unused-argument, too-
                 seen.append(purchase.item_url)
 
     return HttpResponse(json.dumps(payload, indent=2), content_type='application/json', status=200)
+
+@staff_member_required
+def create_asin_lookup(request):
+    context = {}
+
+    if request.method == 'POST':
+        asins = request.POST.get('asins', '').strip().splitlines()
+
+        job_def = {
+              "data_sources": [
+                "asin-fetch"
+              ],
+              "data_types": [
+                "enrollment.asin_lookup"
+              ],
+              "custom_parameters": {
+                "asins": asins
+              }
+        }
+
+        requester = request.user
+
+        print('POST: %s' % request.POST)
+
+        if request.POST.get('upload_to_bucket', '').lower() == 'on':
+            requester = get_user_model().objects.filter(username='s3-asin-files').first()
+
+        report_job = ReportJob.objects.create(requester=requester, requested=timezone.now(), job_index=1, job_count=1, parameters=json.dumps(job_def, indent=2))
+
+        context['message'] = 'Request for %s ASIN lookups submitted successfully.' % len(asins)
+
+    return render(request, 'webmunk_asin_lookup.html', context=context)

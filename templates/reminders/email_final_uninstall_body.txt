@@ -1,0 +1,17 @@
+Dear Webmunk Study Participant,
+ 
+Our study is now complete. Please uninstall the Study Browser Extension from your Chrome browser.
+ 
+To do so, you can open your Chrome browser and click the extension icon on the top-right corner of your browser. If you don’t see it, it may be hidden under the puzzle icon, which is visible in the upper right corner of the screenshot below:
+
+https://enroll.webmunk.org/static/enrollment/reminders/reminder_uninstall_menu.jpg
+
+After clicking on the Study Browser Extension, a pop-up window should appear. If it does not, it may be hidden behind another browser window. On this pop-up window, you should have a task to Uninstall the extension. Please click on the text/link to uninstall.
+
+https://enroll.webmunk.org/static/enrollment/reminders/reminder_uninstall_tasks.png
+
+If you have questions about the study or need technical support, please contact the Webmunk team at webmunk_study@hbs.edu.
+ 
+Thank you!
+ 
+The Webmunk Team

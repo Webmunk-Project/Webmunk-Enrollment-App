@@ -12,6 +12,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
+from django.db.utils import IntegrityError
 from django.utils import timezone
 
 from quicksilver.decorators import handle_lock, handle_schedule, add_qs_arguments
@@ -125,6 +126,9 @@ class Command(BaseCommand):
                                                                     else:
                                                                         task_name = 'Qualtrics (%s)' % survey_id[1]
 
-                                                                        ScheduledTask.objects.create(enrollment=enrollment, slug='qualtric-created-%s' % survey_id[1], task=task_name, completed=completed_date, active=now, last_check=now)
+                                                                        try:
+                                                                            ScheduledTask.objects.create(enrollment=enrollment, slug='qualtric-created-%s' % survey_id[1], task=task_name, completed=completed_date, active=now, last_check=now)
+                                                                        except IntegrityError:
+                                                                            print('Error: Task %s already exists for %s. Skipping.' % ('qualtric-created-%s' % survey_id[1], enrollment))
                 else:
                     print('START NON-200 HTTP CODE: %d -- %s: %s' % (response.status_code, start_url, response.text))

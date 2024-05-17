@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 
 from quicksilver.decorators import handle_lock, handle_schedule, add_qs_arguments
 
-from ...vendor.pdk_client import PDKClient, PDKClientTimeout
+from ...vendor.pdk_client import PDKClient, PDKClientTimeout, PDKClientServerError
 
 from ...models import Enrollment
 
@@ -36,7 +36,7 @@ class Command(BaseCommand):
                     skip_count = metadata.get('data_point_server_skip_count', False)
 
                     if skip_count is False and (data_url.startswith(url) or data_url == 'no-server'):
-                        print('SYNC[%s] %s', (enrollment, data_url))
+                        logging.info('SYNC[%s] %s', enrollment, data_url)
 
                         last_latest = arrow.get(metadata.get('latest_data_point', 0)).datetime
 
@@ -63,3 +63,5 @@ class Command(BaseCommand):
                                 enrollment.save()
                 except PDKClientTimeout:
                     logging.error('Server (%s) time out: %s', url, enrollment.assigned_identifier)
+                except PDKClientServerError:
+                    logging.error('Server error (%s): %s', url, enrollment.assigned_identifier)

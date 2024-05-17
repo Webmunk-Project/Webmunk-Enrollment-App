@@ -3,11 +3,16 @@
 import base64
 import datetime
 import json
+import logging
 import random
+import traceback
 
 from urllib.parse import urlparse
 
 import arrow
+import keepa
+import numpy
+import pandas
 import pytz
 
 from nacl.secret import SecretBox
@@ -70,6 +75,22 @@ def generate_unique_identifier():
             identifier = None
 
     return identifier
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, numpy.ndarray):
+            return o.tolist()
+
+        if isinstance(o, datetime.datetime):
+            return o.isoformat()
+
+        if isinstance(o, pandas.DataFrame):
+            json_str = o.to_json()
+
+            return json.loads(json_str)
+
+        return json.JSONEncoder.default(self, o)
+
 
 @python_2_unicode_compatible
 class ExtensionRuleSet(models.Model):
@@ -335,6 +356,8 @@ class AmazonPurchase(models.Model):
 
     purchase_date = models.DateField()
 
+    metadata = models.TextField(max_length=(4 * 1024 * 1024), null=True, blank=True)
+
     def asin(self):
         tokens = self.item_url.split('/')
 
@@ -369,3 +392,282 @@ class AmazonReward(models.Model):
                 return tokens[i + 1]
 
         return None
+
+@python_2_unicode_compatible
+class AmazonASINItem(models.Model):
+    asin = models.CharField(max_length=4096, unique=True)
+
+    item_name = models.CharField(max_length=4096, null=True, blank=True)
+
+    keepa_response = models.TextField(max_length=(8 * 1024 * 1024), null=True, blank=True)
+
+    fetched = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return '%s (%s)' % (self.item_name, self.asin)
+
+    def fetch_root_category(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            return keepa.get('rootCategory', None)
+
+        return None
+
+    def fetch_category(self):
+        category = ''
+
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            if keepa.get('categoryTree', None) is not None:
+                for category_item in keepa.get('categoryTree', []):
+                    if category != '':
+                        category = category + ' > '
+
+                    category = category + category_item['name']
+
+        return category
+
+    def fetch_category_ids(self):
+        category = ''
+
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            if keepa.get('categoryTree', None) is not None:
+                for category_item in keepa.get('categoryTree', []):
+                    if category != '':
+                        category = category + ' > '
+
+                    category = category + str(category_item['catId'])
+
+        return category
+
+
+    def fetch_brand(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            brand = keepa.get('brand', None)
+
+            return brand
+
+        return None
+
+    def fetch_item_type(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            brand = keepa.get('type', None)
+
+            return brand
+
+        return None
+
+    def fetch_manufacturer(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            brand = keepa.get('manufacturer', None)
+
+            return brand
+
+        return None
+
+    def fetch_seller(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            sellerId = keepa.get('sellerIds', None)
+
+            if sellerId is None:
+                sellerId = keepa.get('buyBoxSellerId', None)
+
+            return sellerId
+
+        return None
+
+    def fetch_size(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            return keepa.get('size', None)
+
+        return None
+
+    def fetch_title(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            return keepa.get('title', None)
+
+        return None
+
+    def fetch_is_on_keepa(self):
+        if self.keepa_response is not None:
+            keepa = {}
+
+            try:
+                keepa = self.cached_keepa
+            except:
+                keepa = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa
+
+            if keepa.get('error', None) is None:
+                return True
+
+            return False
+
+        return None
+
+
+    def populate_title(self):
+        if self.keepa_response is not None:
+            keepa_response = {}
+
+            try:
+                keepa_response = self.cached_keepa
+            except:
+                keepa_response = json.loads(self.keepa_response)
+
+                self.cached_keepa = keepa_response
+
+            if keepa_response.get('title', None) is None:
+                manufacturer = keepa_response.get('manufacturer', None)
+                brand = keepa_response.get('brand', None)
+                size = keepa_response.get('size', None)
+                item_type = keepa_response.get('type', None)
+
+                new_title = ''
+
+                if manufacturer is not None:
+                    new_title += manufacturer
+
+                if brand is not None:
+                    if new_title != '':
+                        new_title += ', '
+
+                    new_title += brand
+
+                if size is not None:
+                    if new_title != '':
+                        new_title += ', '
+
+                    new_title += size
+
+                if item_type is not None:
+                    if new_title != '':
+                        new_title += ' '
+
+                    new_title += '(%s)' % item_type
+
+                self.item_name = new_title
+            else:
+                self.item_name = keepa_response['title']
+
+            self.save()
+
+    def populate(self, force=False):
+        if force is False and self.keepa_response is not None:
+            keepa_response = json.loads(self.keepa_response)
+
+            if keepa_response.get('error', None) is None:
+                return
+
+        try:
+            api = keepa.Keepa(settings.KEEPA_API_KEY)
+
+            products = api.query(self.asin, progress_bar=False, buybox=True)
+
+            logging.debug('%s: %s', self.asin, json.dumps(products, indent=2, cls=NumpyEncoder))
+
+            product = None
+
+            if len(products) > 0 and products[0] is not None:
+                product = products[0]
+
+            if product is not None:
+                try:
+                    self.keepa_response = json.dumps(product, indent=2, cls=NumpyEncoder)
+                except ValueError:
+                    pass # Pandas issue
+            else:
+                raise ValueError('Unable to save Keepa response')
+        except Exception as ex:
+            payload = {
+                'error': 'Unable to retrieve product - exception encountered.'
+            }
+
+            payload['stacktrace'] = ''.join(traceback.TracebackException.from_exception(ex).format())
+
+            self.keepa_response = json.dumps(payload, indent=2, cls=NumpyEncoder)
+
+        self.fetched = timezone.now()
+        self.save()
+
+        self.populate_title()

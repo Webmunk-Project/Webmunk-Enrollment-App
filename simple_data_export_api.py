@@ -3,9 +3,11 @@
 import csv
 import io
 import json
+import logging
 import os
 import tempfile
 import time
+import traceback
 import zipfile
 
 from past.utils import old_div
@@ -15,8 +17,9 @@ import pytz
 import requests
 
 from django.conf import settings
+from django.utils import timezone
 
-from .models import Enrollment
+from .models import Enrollment, AmazonPurchase, AmazonASINItem
 
 def export_data_sources(params=None):
     if params is None:
@@ -35,6 +38,9 @@ def export_data_types():
         ('enrollment.qualtrics_responses', 'Qualtrics Responses',),
         ('enrollment.scheduled_tasks', 'Scheduled Tasks',),
         ('enrollment.enrollments', 'Enrollment Information',),
+        ('enrollment.asin_information', 'Local ASIN Purchases',),
+        ('enrollment.local_asins', 'Local ASIN Records',),
+        ('enrollment.distributed_asin_information', 'Distributed ASIN Information',),
     ]
 
 def compile_data_export(data_type, data_sources, start_time=None, end_time=None, custom_parameters=None): # pylint: disable=too-many-locals, unused-argument, too-many-branches, too-many-statements
@@ -296,5 +302,248 @@ def compile_data_export(data_type, data_sources, start_time=None, end_time=None,
                 writer.writerow(enrollment_values)
 
         return filename
+
+    if data_type == 'enrollment.asin_information':
+        filename = tempfile.gettempdir() + os.path.sep + 'asin_information.txt'
+
+        with io.open(filename, 'w', encoding='utf-8') as outfile:
+            writer = csv.writer(outfile, delimiter='\t')
+
+            header = [
+                'ASIN',
+                'Product',
+                'Primary Category',
+                'Brand',
+                'Seller',
+                'Date Appeared',
+            ]
+
+            seen_asins = []
+
+            writer.writerow(header)
+
+            last_asin = None
+
+            index = 0
+
+            for purchase in AmazonPurchase.objects.all().order_by('item_name', 'item_type'):
+                asin = purchase.asin()
+
+                if asin != last_asin:
+                    print('%s: %s' % (index, asin))
+                    product_values = []
+
+                    product_values.append(purchase.asin())
+                    product_values.append(purchase.item_name)
+                    product_values.append(purchase.item_type)
+                    product_values.append('')
+                    product_values.append('')
+                    product_values.append(purchase.purchase_date.isoformat())
+
+                    writer.writerow(product_values)
+
+                    index += 1
+
+                    last_asin = asin
+                else:
+                    print('skipping %s == %s' % (asin, last_asin))
+
+        return filename
+
+    if data_type == 'enrollment.distributed_asin_information':
+        filename = tempfile.gettempdir() + os.path.sep + 'distributed_asin_information.txt'
+
+        with io.open(filename, 'w', encoding='utf-8') as outfile:
+            writer = csv.writer(outfile, delimiter='\t')
+
+            header = [
+                'ASIN',
+                'Product',
+                'Primary Category',
+                'Brand',
+                'Seller',
+                'Date Appeared',
+                'Details URL',
+            ]
+
+            seen_asins = []
+
+            writer.writerow(header)
+
+            for server in settings.DISTRIBUTED_ASIN_SERVERS:
+                server_url = 'https://%s/support/asins.json' % server
+
+                fetched = 999
+
+                page_index = 0
+
+                while fetched > 0:
+                    url = '%s?page=%s' % (server_url, page_index)
+
+                    print('FETCHING %s -- %s' % (url, timezone.now().isoformat()))
+
+                    response = requests.get(url)
+
+                    items = response.json()
+
+                    fetched = len(items)
+
+                    print('FETCHED: %s -- %s -- %s' % (url, fetched, timezone.now().isoformat()))
+
+                    pending_items = []
+
+                    for item in items:
+                        asin = item.get('asin', None)
+
+                        if asin is not None: # and (asin in seen_asins) is False:
+                            product_values = []
+
+                            product_values.append(asin)
+                            product_values.append(item.get('product_name', ''))
+                            product_values.append(item.get('product_type', ''))
+                            product_values.append(item.get('product_brand', ''))
+                            product_values.append(item.get('product_seller', ''))
+                            product_values.append(item.get('added', ''))
+                            product_values.append('https://%s/support/asin/%s.json' % (server, asin))
+
+                            pending_items.append(product_values)
+
+                            if len(pending_items) > 5000:
+                                writer.writerows(pending_items)
+
+                                pending_items = []
+
+                            seen_asins.append(asin)
+
+                    page_index += 1
+
+        return filename
+
+    if data_type == 'enrollment.local_asins': # custom_parameters=None
+        zip_filename = tempfile.gettempdir() + os.path.sep + 'local_asins.zip'
+
+        with zipfile.ZipFile(zip_filename, 'w', allowZip64=True, compression=zipfile.ZIP_DEFLATED) as export_file:
+            csv_filename = tempfile.gettempdir() + os.path.sep + 'asins.txt'
+
+            with io.open(csv_filename, 'w', encoding='utf-8') as outfile:
+                writer = csv.writer(outfile, delimiter='\t')
+
+                header = [
+                    'ASIN',
+                    'Type',
+                    'Brand',
+                    'Manufacturer',
+                    'Size',
+                    'Seller',
+                    'Title',
+                    'Root Category',
+                    'Category Tree',
+                    'Category Tree IDs',
+                    'Is On Keepa',
+                ]
+
+                writer.writerow(header)
+
+                asin_item_pks = AmazonASINItem.objects.all().values_list('pk', flat=True)
+
+                asin_index = 0
+
+                for asin_item_pk in asin_item_pks:
+                    if True or (asin_index % 500) == 0:
+                        print('%s / %s' % (asin_index, len(asin_item_pks)))
+
+                    asin_index += 1
+
+                    asin_item = AmazonASINItem.objects.get(pk=asin_item_pk)
+
+                    asin_item.populate()
+
+                    product_values = []
+
+                    product_values.append(asin_item.asin)
+                    product_values.append(asin_item.fetch_item_type())
+                    product_values.append(asin_item.fetch_brand())
+                    product_values.append(asin_item.fetch_manufacturer())
+                    product_values.append(asin_item.fetch_size())
+                    product_values.append(asin_item.fetch_seller())
+                    product_values.append(asin_item.fetch_title())
+                    product_values.append(asin_item.fetch_root_category())
+                    product_values.append(asin_item.fetch_category())
+                    product_values.append(asin_item.fetch_category_ids())
+                    product_values.append(asin_item.fetch_is_on_keepa())
+
+                    writer.writerow(product_values)
+
+            export_file.write(csv_filename, 'asins.txt')
+
+            os.remove(csv_filename)
+
+        return zip_filename
+
+
+    if data_type == 'enrollment.asin_lookup': # custom_parameters=None
+        zip_filename = tempfile.gettempdir() + os.path.sep + 'asin_lookup.zip'
+
+        with zipfile.ZipFile(zip_filename, 'w', allowZip64=True, compression=zipfile.ZIP_DEFLATED) as export_file:
+            csv_filename = tempfile.gettempdir() + os.path.sep + 'asins.txt'
+
+            with io.open(csv_filename, 'w', encoding='utf-8') as outfile:
+                writer = csv.writer(outfile, delimiter='\t')
+
+                header = [
+                    'ASIN',
+                    'Type',
+                    'Brand',
+                    'Manufacturer',
+                    'Size',
+                    'Seller',
+                    'Title',
+                    'Root Category',
+                    'Category Tree',
+                    'Category Tree IDs',
+                    'Is On Keepa',
+                ]
+
+                writer.writerow(header)
+
+                if custom_parameters is not None:
+                    asin_list = custom_parameters.get('asins', [])
+
+                    logging.debug('LOOKUP %s', asin_list)
+
+                    for asin in asin_list:
+                        try:
+                            asin_item = AmazonASINItem.objects.filter(asin=asin).first()
+
+                            if asin_item is None:
+                                asin_item = AmazonASINItem.objects.create(asin=asin)
+
+                            asin_item.populate()
+
+                            product_values = []
+
+                            product_values.append(asin_item.asin)
+                            product_values.append(asin_item.fetch_item_type())
+                            product_values.append(asin_item.fetch_brand())
+                            product_values.append(asin_item.fetch_manufacturer())
+                            product_values.append(asin_item.fetch_size())
+                            product_values.append(asin_item.fetch_seller())
+                            product_values.append(asin_item.fetch_title())
+                            product_values.append(asin_item.fetch_root_category())
+                            product_values.append(asin_item.fetch_category())
+                            product_values.append(asin_item.fetch_category_ids())
+                            product_values.append(asin_item.fetch_is_on_keepa())
+
+                            writer.writerow(product_values)
+
+                             # export_file.writestr(('asins/%s.json' % asin.lower()), asin_item.keepa_response)
+                        except:
+                            traceback.print_exc()
+
+            export_file.write(csv_filename, 'asins.txt')
+
+            os.remove(csv_filename)
+
+        return zip_filename
 
     return None

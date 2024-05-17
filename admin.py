@@ -6,7 +6,9 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils import timezone
 
-from .models import Enrollment, EnrollmentGroup, ExtensionRuleSet, ScheduledTask, RuleMatchCount, PageContent, ArchivedExtensionRuleSet, AmazonPurchase, AmazonReward
+from .models import Enrollment, EnrollmentGroup, ExtensionRuleSet, ScheduledTask, \
+                    RuleMatchCount, PageContent, ArchivedExtensionRuleSet, AmazonPurchase, \
+                    AmazonReward, AmazonASINItem
 
 class DropdownRelatedFilter(RelatedFieldListFilter):
     template = 'admin/enrollment_task_enrollment_dropdown_filter.html'
@@ -32,8 +34,8 @@ class ScheduledTaskInline(admin.TabularInline):
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.OSMGeoAdmin):
-    list_display = ('assigned_identifier', 'group', 'enrolled', 'rule_set', 'issues', 'last_fetched')
-    list_filter = ('group', 'enrolled', 'last_fetched', 'rule_set', )
+    list_display = ('assigned_identifier', 'group', 'enrolled', 'rule_set', 'issues', 'last_fetched', 'contact_after',)
+    list_filter = ('group', 'enrolled', 'last_fetched', 'contact_after', 'rule_set', )
 
     search_fields = ('assigned_identifier',)
 
@@ -119,3 +121,10 @@ class AmazonRewardAdmin(admin.OSMGeoAdmin):
     list_filter = ('item_type', 'participant')
 
     search_fields = ('participant', 'item_type', 'item_name', 'item_url',)
+
+@admin.register(AmazonASINItem)
+class AmazonASINItemAdmin(admin.OSMGeoAdmin):
+    list_display = ('asin', 'item_name', 'fetch_item_type', 'fetch_brand', 'fetch_category', 'fetch_category_ids', 'fetched',)
+    list_filter = ('fetched',)
+
+    search_fields = ('asin', 'item_name', 'keepa_response',)

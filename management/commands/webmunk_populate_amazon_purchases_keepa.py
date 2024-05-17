@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
         api = keepa.Keepa(settings.KEEPA_API_KEY)
 
-        for amazon_product in AmazonPurchase.objects.filter(item_type=None).order_by('enrollment__enrolled', 'purchase_date', 'item_name'): # pylint: disable=too-many-nested-blocks
+        for amazon_product in AmazonPurchase.objects.filter(metadata=None).order_by('enrollment__enrolled', 'purchase_date', 'item_name'): # pylint: disable=too-many-nested-blocks
             if len(amazon_product.asin()) <= 10:
                 try:
                     products = keepa_cache.get(amazon_product.asin(), None)
@@ -87,7 +87,7 @@ class Command(BaseCommand):
                                             break
                                     except AttributeError:
                                         traceback.print_exc()
-                                        print('%s[%s]: GOT %s' % (amazon_product.item_name, amazon_product.asin(), first_keepa.get('categoryTree', None)))
+                                        print('%s[%s]: GOT %s' % (amazon_product.item_name, amazon_product.asin(), first_keepa))
 
                     if products is None:
                         time.sleep(settings.KEEPA_API_SLEEP_SECONDS)
@@ -113,13 +113,16 @@ class Command(BaseCommand):
                                     category = category + category_item['name']
 
                                 amazon_product.item_type = category
-                                amazon_product.save()
 
-                                print('[%s / %s] %s -- %s' % (amazon_product.enrollment, amazon_product.enrollment.enrolled, amazon_product.item_name, amazon_product.item_type))
+                            amazon_product.metadata = json.dumps(product, indent=2, cls=NumpyEncoder)
+                            amazon_product.save()
+
+                            print('[%s / %s / %s] %s -- %s' % (amazon_product.enrollment, amazon_product.asin(), amazon_product.enrollment.enrolled, amazon_product.item_name, amazon_product.item_type))
                         else:
                             print('NULL ITEM: %s - %s' % (amazon_product.asin(), amazon_product.item_name))
 
                             amazon_product.item_type = 'null'
+                            amazon_product.metadata = 'null'
                             amazon_product.save()
                     else:
                         print('NOT FOUND: %s - %s' % (amazon_product.asin(), amazon_product.item_name))
