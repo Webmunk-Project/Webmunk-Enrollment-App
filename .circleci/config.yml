@@ -39,7 +39,7 @@ jobs:
             mv project enrollment
             mkdir django
             cd django
-            django-admin.py startproject django_site
+            django-admin startproject django_site
             mv ../enrollment django_site
             cd django_site
             cp enrollment/.circleci/circle_settings.py django_site/settings.py
